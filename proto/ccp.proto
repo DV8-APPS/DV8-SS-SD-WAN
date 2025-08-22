@@ -1,0 +1,12 @@
+syntax = "proto3";
+package dv8.ccp.v1;
+
+message Context { string device = 1; string site = 2; uint32 risk = 3; }
+message Req { string actor = 1; string action = 2; Context ctx = 3; }
+message Res {
+  enum Decision { ALLOW = 0; ESCALATE = 1; LOCK = 2; DENY = 3; }
+  Decision decision = 1;
+  string reason = 2;
+  map<string, string> obligations = 3;
+}
+service CCP { rpc Decide(Req) returns (Res); }

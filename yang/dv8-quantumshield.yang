@@ -1,0 +1,15 @@
+module dv8-quantumshield {
+  namespace "urn:dv8:qs"; prefix qs;
+  container qs {
+    leaf pqc-required { type boolean; default false; }
+    container dbg { leaf enabled { type boolean; default true; } }
+    list set-field {
+      key "name";
+      leaf name { type string; }
+      leaf aead { type enumeration { enum AES256_GCM; } }
+      leaf aad-policy { type string; }
+    }
+    container hoac { leaf profile { type enumeration { enum ECC; enum PQC; } default ECC; } }
+    container lso { leaf exports { type boolean; default false; } }
+  }
+}

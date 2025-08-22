@@ -1,0 +1,114 @@
+openapi: 3.1.0
+info: { title: DV8 SS Flow Management API, version: "v1" }
+servers: [{ url: https://api.dv8/ssfm }]
+security: [{ DV8DBGID: [], mTLS: [] }]
+paths:
+  /v1/discovery/jobs:
+    post:
+      summary: Start discovery job
+      security: [{ DV8DBGID: [], mTLS: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant, scopes]
+              properties:
+                tenant: { type: string }
+                scopes:
+                  type: array
+                  items: { type: string, example: "site:ZA-JNB-DC" }
+                cidrs: { type: array, items: { type: string, example: "10.10.0.0/16" } }
+                passiveOnly: { type: boolean, default: false }
+      responses:
+        "202": { description: accepted, headers: { X-DV8-Decision: { $ref: "#/components/headers/X-DV8-Decision" }, Location: { schema: { type: string } } } }
+  /v1/discovery/jobs/{id}:
+    get:
+      summary: Get job status
+      security: [{ DV8DBGID: [], mTLS: [] }]
+      responses: { "200": { headers: { X-DV8-Decision: { $ref: "#/components/headers/X-DV8-Decision" } }, $ref: "#/components/schemas/DiscoveryJob" } }
+  /v1/discovery/candidates:
+    get:
+      summary: List candidates
+      security: [{ DV8DBGID: [], mTLS: [] }]
+      parameters: [{ name: tenant, in: query, required: true, schema: { type: string } }]
+      responses: { "200": { headers: { X-DV8-Decision: { $ref: "#/components/headers/X-DV8-Decision" } }, $ref: "#/components/schemas/CandidateList" } }
+  /v1/devices/{virtualId}:replace:
+    post:
+      summary: Replace virtual with physical device
+      security: [{ DV8DBGID: [], mTLS: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serial, site]
+              properties:
+                serial: { type: string }
+                site: { type: string }
+                requireAttestation: { type: boolean, default: true }
+      responses:
+        "200": { description: swapped, headers: { X-DV8-Decision: { $ref: "#/components/headers/X-DV8-Decision" } }, content: { application/json: { schema: { $ref: "#/components/schemas/SwapResult" } } } }
+
+  /v1/ccp/adjudications:
+    post:
+      summary: Adjudicate a privileged action
+      security: [{ DV8DBGID: [], mTLS: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actor, action, context]
+              properties:
+                actor: { type: string }
+                action: { type: string }
+                context:
+                  type: object
+                  properties:
+                    device: { type: string }
+                    site: { type: string }
+                    risk: { type: integer }
+      responses:
+        "200": { headers: { X-DV8-Decision: { $ref: "#/components/headers/X-DV8-Decision" } } }
+
+  /v1/crypto/hoac/negotiate:
+    post:
+      summary: Negotiate channel crypto (ECC/PQC)
+      security: [{ mTLS: [] }]
+      responses:
+        "200": { description: "Profile selected: ECC|PQC" }
+
+  /v1/audit/bundles:
+    post:
+      summary: Export ledger pack
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lso: { type: boolean, default: false }
+                scope: { type: object }
+      responses:
+        "201": { description: "Created", headers: { Location: { schema: { type: string } } } }
+components:
+  securitySchemes:
+    DV8DBGID: { type: apiKey, in: header, name: X-DV8-DBGID }
+    mTLS: { type: mutualTLS }
+  headers:
+    X-DV8-Decision:
+      schema: { type: string, enum: [ALLOW, ESCALATE, LOCK, DENY] }
+  schemas:
+    DiscoveryJob: { type: object, properties: { id: {type: string}, status: {type: string}, startedAt: {type: string, format: date-time} } }
+    CandidateList: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/Candidate" } } } }
+    Candidate:
+      type: object
+      properties:
+        fp: { type: string, description: fingerprint }
+        addrs: { type: array, items: { type: string } }
+        signals: { type: array, items: { type: string } }
+        confidence: { type: number }
+    SwapResult: { type: object, properties: { physicalId: {type: string}, ledger: {type: string} } }

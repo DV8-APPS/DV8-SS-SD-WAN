@@ -1,0 +1,9 @@
+module dv8-flowos {
+  namespace "urn:dv8:flowos"; prefix fos;
+  container discovery {
+    leaf enabled { type boolean; default true; }
+    leaf passive-only { type boolean; default false; }
+    leaf rate-limit-pps { type uint32; default 100; }
+    list cidr-allowlist { key "cidr"; leaf cidr { type string; } }
+  }
+}

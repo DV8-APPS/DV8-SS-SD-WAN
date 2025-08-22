@@ -1,0 +1,4 @@
+{ "type":"object","properties":{
+  "ts":{"type":"integer"},"device":{"type":"string"},"channel":{"type":"string"},
+  "from":{"enum":["ECC","PQC"]},"to":{"enum":["ECC","PQC"]},"risk":{"type":"integer"}
+},"required":["ts","device","from","to"]}

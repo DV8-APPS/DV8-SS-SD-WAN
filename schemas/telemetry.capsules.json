@@ -1,0 +1,4 @@
+{ "type":"object","properties":{
+  "ts":{"type":"integer"},"device":{"type":"string"},"entropy_delta":{"type":"number"},
+  "geo_velocity":{"type":"number"},"behaviour":{"type":"number"},"risk":{"type":"integer"}
+},"required":["ts","device","risk"]}

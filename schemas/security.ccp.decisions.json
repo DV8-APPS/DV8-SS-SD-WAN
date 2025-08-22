@@ -1,0 +1,5 @@
+{ "type":"object","properties":{
+  "ts":{"type":"integer"},"actor":{"type":"string"},"action":{"type":"string"},
+  "ctx":{"type":"object"},"decision":{"enum":["ALLOW","ESCALATE","LOCK","DENY"]},
+  "reason":{"type":"string"},"ledger":{"type":"string"}
+},"required":["ts","actor","action","decision"]}
