@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+    <title>DV8 Network Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h1>Network Metrics</h1>
+<p>Average latency: {{ data.avg_latency }} ms</p>
+<canvas id="latencyChart" width="400" height="200"></canvas>
+<script>
+const ctx = document.getElementById('latencyChart').getContext('2d');
+const labels = {{ data.devices | map(attribute='device') | list | safe }};
+const latencies = {{ data.devices | map(attribute='latency_ms') | list | safe }};
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Latency (ms)',
+            data: latencies,
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        }]
+    }
+});
+</script>
+</body>
+</html>

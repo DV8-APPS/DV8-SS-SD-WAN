@@ -1,0 +1,14 @@
+syntax = "proto3";
+package dv8.discovery.v1;
+
+message Scope { string tenant=1; repeated string cidrs=2; bool passive_only=3; }
+message Job { string id=1; string status=2; int64 started_at=3; }
+message Candidate {
+  string fp=1; repeated string addrs=2; repeated string signals=3; float confidence=4;
+  map<string,string> caps=5; // gNMI/NETCONF caps
+}
+service Discovery {
+  rpc Start(Scope) returns (Job);
+  rpc Status(Job) returns (Job);
+  rpc StreamCandidates(Job) returns (stream Candidate);
+}
