@@ -105,7 +105,7 @@ pytest
 
 ## C# Web API
 
-A lightweight ASP.NET Core service offers equivalent firmware and analytics endpoints.
+A lightweight ASP.NET Core service offers equivalent firmware, sandbox, and zero-touch endpoints.
 
 Run the API:
 

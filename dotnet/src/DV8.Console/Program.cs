@@ -19,6 +19,7 @@ builder.Services.AddSingleton<PlannerService>();
 builder.Services.AddSingleton<QuantumShieldService>();
 builder.Services.AddSingleton<SelfHealService>();
 builder.Services.AddSingleton<DiscoveryService>();
+builder.Services.AddSingleton<ZeroTouchService>();
 
 var app = builder.Build();
 
@@ -45,6 +46,7 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<QuantumShieldService>();
     scope.ServiceProvider.GetRequiredService<SelfHealService>();
     scope.ServiceProvider.GetRequiredService<DiscoveryService>();
+    scope.ServiceProvider.GetRequiredService<ZeroTouchService>();
 }
 
 if (app.Environment.IsDevelopment())
