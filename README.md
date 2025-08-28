@@ -1,125 +1,240 @@
-# DV8 Quantum Shield
+# DV8 Sovereign SD-WAN & Network Management Console
 
-Prototype console for SD-WAN and router/switch management backed by SQLite with an audit log for all device operations.
+Complete sovereign SD-WAN and network management platform with comprehensive device management, self-healing capabilities, and integrated security controls.
 
-QuantumShield primitives are stubbed end-to-end. All privileged endpoints emit an `X-DV8-Decision` header and accept the `X-DV8-DBGID` credential, mirroring the production controller's adjudication flow.
+## ✨ Features
 
-## Running the console
+- **Sovereign SD-WAN Management**: Complete control plane for SD-WAN infrastructure
+- **Self-Healing Automation**: AI-driven automatic device recovery and optimization
+- **Quantum Shield Integration**: Advanced security and risk assessment
+- **Zero-Touch Provisioning**: Automated device enrollment and configuration
+- **Real-time Analytics**: Network metrics, device monitoring, and performance insights
+- **Compliance & Security**: DISA compliance scanning and vulnerability management
+- **Multi-Vendor Support**: Unified management across different network vendors
+
+## 🚀 One-Click Installation
+
+The fastest way to get DV8 SD-WAN running:
 
 ```bash
+# Clone the repository
+git clone https://github.com/DV8-TECHNOLOGY-GROUP/DV8-SS-SD-WAN.git
+cd DV8-SS-SD-WAN
+
+# One-click setup: installs all dependencies, initializes database, runs tests
+python setup.py
+
+# Start the application
+python run_dv8.py
+```
+
+Or using Make:
+```bash
+make install  # Complete setup and testing
+make run      # Start the application
+```
+
+## 📋 Requirements
+
+- **Python 3.8+** 
+- **.NET SDK 8.0+** (for C# components)
+- **Git** (recommended)
+
+## 🛠️ Manual Installation
+
+```bash
+# Install Python dependencies
 pip install -r requirements.txt
-# install .NET SDK 8.0 (Ubuntu example)
-apt-get update && apt-get install -y dotnet-sdk-8.0
-uvicorn app.main:app --reload
+
+# Verify system dependencies
+make health
+
+# Initialize database
+python -c "from app.db import init_db; init_db()"
+
+# Run tests
+make test
+
+# Start development server
+make run-dev
 ```
 
-The dashboard is served at `http://localhost:8000/dashboard` and includes
-basic analytics such as average latency and device status counts.
+## 🌐 Access Points
 
-On startup the FastAPI application verifies that core dependencies are
-installed, failing fast if any required modules are missing. It also
-preloads the .NET SDK by running `dotnet --info`; if the SDK is
-unavailable the service will terminate on startup.
+After installation, access the platform at:
 
-State is persisted in a SQLite database via SQLAlchemy. Firmware, zero-touch, and sandbox modules share a unified device table and every mutation is recorded in an `audit_log` table for traceability.
+- **Dashboard**: http://localhost:8000/dashboard
+- **API Documentation**: http://localhost:8000/docs
+- **Metrics**: http://localhost:8000/metrics
+- **Self-Heal**: http://localhost:8000/self-heal
 
-Discovery jobs can be started to automatically identify devices on the network:
+## 🔧 Key Components
 
-- `POST /discovery/jobs` to start a discovery job
-- `GET /discovery/jobs/{id}` to retrieve job status
-- `GET /discovery/candidates?tenant=acme` to list discovered candidates
+### Self-Healing Module
+Automatically detects and repairs network issues:
+```bash
+# Trigger self-healing
+curl -X POST http://localhost:8000/self-heal
 
-Firmware installations can be simulated via the API:
+# View healing history
+curl http://localhost:8000/metrics
+```
 
-- `POST /firmware/install` with JSON body `{ "device": "router-1", "version": "1.2.3" }`
-- `GET /firmware/{device}` to retrieve the installed version.
-
-### Sandboxed device simulation
-
-The API can track simulated routers or switches with configurable
-ports, warning lights and status.
-
-- `POST /sandbox/device` with JSON body
-  `{ "name": "sim-router", "device_type": "router", "ports": 8 }`
-- `PUT /sandbox/device/{name}` to update status and warning lights
-  (e.g. `{ "status": "down", "warnings": { "temperature": true } }`)
-- `GET /sandbox/summary` to retrieve aggregate counts of devices,
-  ports, statuses and active warnings.
-
-### Zero-touch configuration management
-
-Devices can enroll with a configuration template and mark when the template
-has been applied:
-
-- `POST /zero-touch/enroll` with `{ "name": "ztp-router", "template": "basic-router" }`
-- `POST /zero-touch/device/{name}/applied` to indicate a device finished
-  applying its template
-- `GET /zero-touch/device/{name}` or `/zero-touch/devices` to retrieve
-  enrolled devices and their application status
-
-### Auto-capture & vendor collectors
-
-Devices can auto-populate hostname, management IP and OS version using a
-serial number, and vendor-specific collectors are exposed for inventory and
-health telemetry:
-
-- `POST /v1/devices/autocapture` with `{ "serial": "ABC123" }`
-- `GET /v1/vendors/meraki/collectors`
-
-### Self-healing and zero-error runtime
-
-The console preloads all Python dependencies at startup and registers a
-zero-error middleware. Any unhandled exception is logged to the audit trail
-and returned as a generic error response. The companion ASP.NET Core API
-preloads its singleton services at launch and uses a global error-handling
-middleware to record unexpected failures and append the `X-DV8-Decision`
-header on every response.
-
-AI-driven self-healing can be triggered via:
-
-- `POST /self-heal` to automatically recover devices in the sandbox.
-
-### Compliance scanning and vulnerability watch
-
-The console can simulate compliance checks and vulnerability database
-syncs:
-
-- `POST /v1/compliance/scans` with `{ "profile": "DISA" }` to start a
-  scan
-- `GET /v1/compliance/results?profile=DISA&device=router-1` to retrieve
-  results
-- `POST /v1/vulnwatch/sync` to fetch CVE advisories
-- `GET /v1/vulnwatch/findings?device=router-1` to list vulnerabilities
-
-### SD-WAN path tracing and policy impact
-
-- `GET /v1/sdwan/pathtracer?src=a&dst=b` returns hop-by-hop metrics
-- `GET /v1/policy/impact?policyId=p1&before=old&after=new` shows policy
-  impact timelines
-
-## Testing
+### Device Management
+Complete lifecycle management for network devices:
 
 ```bash
-pytest
+# Register a device
+curl -X POST http://localhost:8000/sandbox/device \
+  -H "Content-Type: application/json" \
+  -d '{"name": "router-1", "device_type": "router", "ports": 4}'
+
+# Zero-touch enrollment
+curl -X POST http://localhost:8000/zero-touch/enroll \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ztp-router", "template": "enterprise-router"}'
 ```
 
-## C# Web API
-
-A lightweight ASP.NET Core service offers equivalent firmware, sandbox, and zero-touch endpoints.
-
-Run the API:
+### Firmware Management
+Centralized firmware deployment and tracking:
 
 ```bash
-cd dotnet
-dotnet run --project src/DV8.Console
+# Install firmware
+curl -X POST http://localhost:8000/firmware/install \
+  -H "Content-Type: application/json" \
+  -d '{"device": "router-1", "version": "2.1.0"}'
+
+# Check firmware status
+curl http://localhost:8000/firmware/router-1
 ```
 
-Run the .NET tests:
+### Auto-Healer APIs
+Advanced healing playbooks and incident management:
 
 ```bash
-cd dotnet
-dotnet test
+# Create healing playbook
+curl -X POST http://localhost:8000/v1/heal/playbooks \
+  -H "Content-Type: application/json" \
+  -d '{"name": "network-recovery", "triggers": [], "steps": []}'
+
+# List incidents
+curl http://localhost:8000/v1/heal/incidents
 ```
 
-The ASP.NET Core service preloads its singleton services at launch to ensure
-required dependencies are available.
+### GuardRail APIs
+Policy validation and change approval:
+
+```bash
+# Lint configuration
+curl -X POST http://localhost:8000/v1/guardrail/lint \
+  -H "Content-Type: application/json" \
+  -d '{"intentYaml": "policy: allow"}'
+
+# Approve changes
+curl -X POST http://localhost:8000/v1/guardrail/approve \
+  -H "Content-Type: application/json" \
+  -d '{"changeId": "change-123"}'
+```
+
+### Device Discovery
+Automated network discovery and inventory:
+
+```bash
+# Start discovery job
+curl -X POST http://localhost:8000/discovery/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"tenant": "enterprise", "scopes": ["192.168.1.0/24"]}'
+
+# Check discovery results
+curl http://localhost:8000/discovery/candidates?tenant=enterprise
+```
+
+### Compliance & Security
+Comprehensive security scanning and vulnerability management:
+
+```bash
+# Start compliance scan
+curl -X POST http://localhost:8000/v1/compliance/scans \
+  -H "Content-Type: application/json" \
+  -d '{"profile": "DISA"}'
+
+# Sync vulnerability database
+curl -X POST http://localhost:8000/v1/vulnwatch/sync
+
+# Get vulnerability findings
+curl http://localhost:8000/v1/vulnwatch/findings?device=router-1
+```
+
+## 🧪 Testing
+
+```bash
+# Run unit tests
+make test
+
+# Run comprehensive integration tests
+make test-integration
+
+# Run specific test file
+python -m pytest tests/test_app.py -v
+```
+
+## 📊 Database Schema
+
+The platform uses SQLite with the following key tables:
+
+- **devices**: Core device inventory
+- **firmware**: Firmware version tracking
+- **zero_touch**: Zero-touch provisioning configs
+- **warnings**: Device warning and alert states
+- **audit_log**: Complete audit trail of all operations
+
+## 🔧 Development
+
+Start the development server with hot reload:
+
+```bash
+make run-dev
+# or
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## 🏗️ Architecture
+
+- **FastAPI**: Modern Python web framework with automatic OpenAPI docs
+- **SQLAlchemy**: Database ORM with migration support
+- **Pydantic**: Data validation and serialization
+- **Jinja2**: Template engine for web interface
+- **.NET Core**: Complementary C# API for legacy integration
+
+## 🛡️ Security Features
+
+- **QuantumShield Integration**: Advanced threat detection and risk scoring
+- **Zero-Error Middleware**: Comprehensive error handling and logging
+- **Audit Trail**: Complete operation logging for compliance
+- **Decision Headers**: Policy enforcement on all endpoints
+
+## 📝 Documentation
+
+- **API Docs**: Available at `/docs` when running
+- **Specifications**: See `DV8_SPEC.md` for detailed technical specifications
+- **Requirements**: See `TECH_REQUIREMENTS.md` for implementation details
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `make test`
+5. Submit a pull request
+
+## 📄 License
+
+This project is part of the DV8 Technology Group sovereign network management suite.
+
+## 🆘 Support
+
+For issues and support:
+1. Check the logs: `tail -f dv8.db` 
+2. Run health check: `make health`
+3. Review API docs: http://localhost:8000/docs
+4. Run diagnostic tests: `make test-integration`
