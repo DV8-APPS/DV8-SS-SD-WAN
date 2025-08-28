@@ -15,7 +15,7 @@ from .sandbox import register as sb_register, get as sb_get, update as sb_update
 from .zero_touch import enroll as zt_enroll, get as zt_get, mark_applied as zt_mark, list_devices as zt_list
 from .discovery import start_job, get_job, list_candidates
 from .db import get_db, init_db, SessionLocal, AuditLog
-from .self_heal import heal_devices
+from .self_heal import heal_devices, get_healing_history, get_healing_statistics
 from .healer import create_playbook, list_incidents, execute_incident
 from .guardrail import lint as gr_lint, approve as gr_approve
 from .synthetics import create_probe, get_results as syn_results
@@ -268,7 +268,21 @@ async def create_audit_bundle(req: AuditRequest, response: Response):
 
 @app.post("/self-heal")
 async def trigger_self_heal():
-    return {"healed": heal_devices()}
+    """Enhanced self-healing endpoint with comprehensive reporting"""
+    result = heal_devices()
+    return result
+
+
+@app.get("/self-heal/history")
+async def get_heal_history(limit: int = 50):
+    """Get recent self-healing history"""
+    return {"history": get_healing_history(limit)}
+
+
+@app.get("/self-heal/statistics")
+async def get_heal_stats():
+    """Get comprehensive self-healing statistics"""
+    return get_healing_statistics()
 
 
 # ----- Auto-Healer APIs -----

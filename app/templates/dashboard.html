@@ -1,28 +1,420 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>DV8 Network Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DV8 SD-WAN Console - Interactive Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .status-up { color: #10b981; }
+        .status-down { color: #ef4444; }
+        .status-warning { color: #f59e0b; }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
 </head>
-<body>
-<h1>Network Metrics</h1>
-<p>Average latency: {{ data.avg_latency }} ms</p>
-<canvas id="latencyChart" width="400" height="200"></canvas>
-<script>
-const ctx = document.getElementById('latencyChart').getContext('2d');
-const labels = {{ data.devices | map(attribute='device') | list | safe }};
-const latencies = {{ data.devices | map(attribute='latency_ms') | list | safe }};
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Latency (ms)',
-            data: latencies,
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        }]
-    }
-});
-</script>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-blue-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-network-wired text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold">DV8 SD-WAN Console</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center text-green-300">
+                        <div class="w-2 h-2 bg-green-400 rounded-full pulse mr-2"></div>
+                        <span class="text-sm">System Healthy</span>
+                    </div>
+                    <button id="self-heal-btn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-magic mr-2"></i>Auto Heal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-server text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Active Devices</p>
+                        <p class="text-2xl font-bold" id="device-count">{{ data.devices | length }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Avg Latency</p>
+                        <p class="text-2xl font-bold" id="avg-latency">{{ data.avg_latency }}ms</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Devices Up</p>
+                        <p class="text-2xl font-bold status-up" id="devices-up">{{ data.status_counts.up }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600">
+                        <i class="fas fa-exclamation-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Devices Down</p>
+                        <p class="text-2xl font-bold status-down" id="devices-down">{{ data.status_counts.down }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Network Metrics Chart -->
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Network Performance</h2>
+                    <button id="refresh-metrics" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <canvas id="latencyChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Interactive Device Management -->
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Device Management</h2>
+                
+                <!-- Add Device Form -->
+                <form id="device-form" class="space-y-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Device Name</label>
+                            <input type="text" id="device-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., router-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Device Type</label>
+                            <select id="device-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select Type</option>
+                                <option value="router">Router</option>
+                                <option value="switch">Switch</option>
+                                <option value="firewall">Firewall</option>
+                                <option value="access-point">Access Point</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ports</label>
+                            <input type="number" id="device-ports" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" min="1" max="48" value="4">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="device-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="up">Up</option>
+                                <option value="down">Down</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Device
+                    </button>
+                </form>
+
+                <!-- Device List -->
+                <div class="max-h-64 overflow-y-auto">
+                    <div id="device-list" class="space-y-2">
+                        {% for device in data.devices %}
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-server mr-3 {% if device.status == 'up' %}text-green-500{% else %}text-red-500{% endif %}"></i>
+                                <div>
+                                    <p class="font-medium">{{ device.device }}</p>
+                                    <p class="text-sm text-gray-600">{{ device.latency_ms }}ms latency</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full {% if device.status == 'up' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ device.status|title }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Activity Feed -->
+        <div class="mt-8">
+            <div class="card bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Real-time Activity</h2>
+                <div id="activity-feed" class="space-y-3 max-h-64 overflow-y-auto">
+                    <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                        <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+                        <div>
+                            <p class="text-sm">System initialized successfully</p>
+                            <p class="text-xs text-gray-500">Just now</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="notification" class="hidden fixed top-4 right-4 max-w-sm bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+        <div class="p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i id="notification-icon" class="fas fa-check-circle text-green-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p id="notification-message" class="text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button onclick="hideNotification()" class="inline-flex rounded-md p-1.5 text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Charts
+        const ctx = document.getElementById('latencyChart').getContext('2d');
+        const labels = {{ data.devices | map(attribute='device') | list | safe }};
+        const latencies = {{ data.devices | map(attribute='latency_ms') | list | safe }};
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Latency (ms)',
+                    data: latencies,
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Latency (ms)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Notification functions
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const icon = document.getElementById('notification-icon');
+            const messageEl = document.getElementById('notification-message');
+            
+            messageEl.textContent = message;
+            
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle text-green-500';
+            } else if (type === 'error') {
+                icon.className = 'fas fa-exclamation-circle text-red-500';
+            } else if (type === 'info') {
+                icon.className = 'fas fa-info-circle text-blue-500';
+            }
+            
+            notification.classList.remove('hidden');
+            setTimeout(() => {
+                hideNotification();
+            }, 5000);
+        }
+
+        function hideNotification() {
+            document.getElementById('notification').classList.add('hidden');
+        }
+
+        // Add activity to feed
+        function addActivity(message, type = 'info') {
+            const feed = document.getElementById('activity-feed');
+            const activity = document.createElement('div');
+            const now = new Date().toLocaleTimeString();
+            
+            let iconClass = 'fas fa-info-circle text-blue-600';
+            let bgClass = 'bg-blue-50';
+            
+            if (type === 'success') {
+                iconClass = 'fas fa-check-circle text-green-600';
+                bgClass = 'bg-green-50';
+            } else if (type === 'error') {
+                iconClass = 'fas fa-exclamation-circle text-red-600';
+                bgClass = 'bg-red-50';
+            } else if (type === 'warning') {
+                iconClass = 'fas fa-exclamation-triangle text-yellow-600';
+                bgClass = 'bg-yellow-50';
+            }
+            
+            activity.innerHTML = `
+                <div class="flex items-center p-3 ${bgClass} rounded-lg">
+                    <i class="${iconClass} mr-3"></i>
+                    <div>
+                        <p class="text-sm">${message}</p>
+                        <p class="text-xs text-gray-500">${now}</p>
+                    </div>
+                </div>
+            `;
+            
+            feed.insertBefore(activity, feed.firstChild);
+            
+            // Keep only last 10 activities
+            while (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Device form submission
+        document.getElementById('device-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('device-name').value;
+            const type = document.getElementById('device-type').value;
+            const ports = document.getElementById('device-ports').value;
+            const status = document.getElementById('device-status').value;
+            
+            if (!name || !type) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/sandbox/device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        device_type: type,
+                        ports: parseInt(ports),
+                        status: status
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification(`Device ${name} added successfully!`, 'success');
+                    addActivity(`Device ${name} (${type}) added to network`, 'success');
+                    document.getElementById('device-form').reset();
+                    // Refresh the page to show new device
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    const error = await response.json();
+                    showNotification(error.detail || 'Failed to add device', 'error');
+                    addActivity(`Failed to add device ${name}: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error occurred', 'error');
+                addActivity(`Network error: ${error.message}`, 'error');
+            }
+        });
+
+        // Self-heal button
+        document.getElementById('self-heal-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('self-heal-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Healing...';
+            
+            try {
+                const response = await fetch('/self-heal', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification(`Self-healing completed! ${result.healed} devices healed.`, 'success');
+                    addActivity(`Self-healing process completed successfully`, 'success');
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showNotification('Self-healing failed', 'error');
+                    addActivity('Self-healing process failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during self-healing', 'error');
+                addActivity(`Self-healing error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic mr-2"></i>Auto Heal';
+            }
+        });
+
+        // Refresh metrics
+        document.getElementById('refresh-metrics').addEventListener('click', async () => {
+            const btn = document.getElementById('refresh-metrics');
+            btn.classList.add('fa-spin');
+            
+            try {
+                const response = await fetch('/metrics');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update chart and stats
+                    chart.data.labels = data.devices.map(d => d.device);
+                    chart.data.datasets[0].data = data.devices.map(d => d.latency_ms);
+                    chart.update();
+                    
+                    document.getElementById('avg-latency').textContent = data.average_latency + 'ms';
+                    document.getElementById('devices-up').textContent = data.status_counts.up;
+                    document.getElementById('devices-down').textContent = data.status_counts.down;
+                    
+                    addActivity('Metrics refreshed successfully', 'info');
+                }
+            } catch (error) {
+                showNotification('Failed to refresh metrics', 'error');
+            } finally {
+                btn.classList.remove('fa-spin');
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            document.getElementById('refresh-metrics').click();
+        }, 30000);
+
+        // Initialize with welcome message
+        addActivity('Dashboard loaded successfully', 'success');
+    </script>
 </body>
 </html>
