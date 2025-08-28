@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Generator
 
 from sqlalchemy import (
@@ -69,7 +69,7 @@ class AuditLog(Base):
     entity = Column(String, nullable=False)
     entity_id = Column(Integer, nullable=True)
     details = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 def init_db() -> None:

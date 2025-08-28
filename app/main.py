@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from typing import Dict, Optional, List
 from sqlalchemy.orm import Session
+from contextlib import asynccontextmanager
 
 from .analytics import average_latency, device_status_count
 from .firmware import install as fw_install, get_version as fw_get_version
@@ -14,7 +15,6 @@ from .sandbox import register as sb_register, get as sb_get, update as sb_update
 from .zero_touch import enroll as zt_enroll, get as zt_get, mark_applied as zt_mark, list_devices as zt_list
 from .discovery import start_job, get_job, list_candidates
 from .db import get_db, init_db, SessionLocal, AuditLog
-from .zero_error import init_zero_error
 from .self_heal import heal_devices
 from .healer import create_playbook, list_incidents, execute_incident
 from .guardrail import lint as gr_lint, approve as gr_approve
@@ -27,8 +27,30 @@ from .policy_impact import timeline as policy_timeline
 from .autocapture import auto_capture
 from .collectors import list_collectors
 
-app = FastAPI(title="DV8 SD-WAN Console")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    check_dependencies()
+    preload_dotnet_sdk()
+    init_db()
+    yield
+    # Shutdown (if needed)
+    pass
+
+app = FastAPI(title="DV8 SD-WAN Console", lifespan=lifespan)
 templates = Jinja2Templates(directory="app/templates")
+
+# Zero-error middleware - must be registered before startup
+@app.middleware("http")
+async def zero_error_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        with SessionLocal() as db:
+            db.add(AuditLog(action="error", entity="system", details=str(exc)))
+            db.commit()
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"detail": "internal error"})
 
 REQUIRED_MODULES = ["fastapi", "jinja2", "pydantic", "sqlalchemy"]
 
@@ -48,14 +70,7 @@ def preload_dotnet_sdk() -> None:
     subprocess.run(["dotnet", "--info"], check=True, stdout=subprocess.DEVNULL)
 
 
-@app.on_event("startup")
-async def startup_check() -> None:
-    check_dependencies()
-    preload_dotnet_sdk()
-    init_db()
-    init_zero_error(app)
-
-
+# Decision header middleware
 @app.middleware("http")
 async def decision_header(request: Request, call_next):
     response = await call_next(request)
@@ -87,7 +102,7 @@ async def dashboard(request: Request):
         "avg_latency": average_latency(device_metrics),
         "status_counts": device_status_count(device_metrics),
     }
-    return templates.TemplateResponse("dashboard.html", {"request": request, "data": data})
+    return templates.TemplateResponse(request, "dashboard.html", {"data": data})
 
 
 class InstallRequest(BaseModel):

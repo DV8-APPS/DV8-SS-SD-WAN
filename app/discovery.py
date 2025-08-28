@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 from uuid import uuid4
 
@@ -16,7 +16,7 @@ def start_job(tenant: str, scopes: List[str], cidrs: List[str], passive_only: bo
         "scopes": scopes,
         "cidrs": cidrs,
         "status": "running",
-        "started_at": datetime.utcnow().isoformat() + "Z",
+        "started_at": datetime.now(timezone.utc).isoformat() + "Z",
         "passive_only": passive_only,
     }
     jobs[job_id] = job
