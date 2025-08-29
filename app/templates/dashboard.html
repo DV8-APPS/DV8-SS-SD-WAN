@@ -8,96 +8,190 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* UX-REQUIREMENTS: A11Y-WCAG-COLOR01 - Enhanced contrast ratios */
         .card { transition: all 0.3s ease; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
-        .status-up { color: #10b981; }
-        .status-down { color: #ef4444; }
-        .status-warning { color: #f59e0b; }
+        .status-up { color: #059669; } /* Enhanced contrast for WCAG AA */
+        .status-down { color: #dc2626; } /* Enhanced contrast for WCAG AA */
+        .status-warning { color: #d97706; } /* Enhanced contrast for WCAG AA */
         .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        
+        /* UX-REQUIREMENTS: A11Y-WCAG-NAV01 - Focus indicators */
+        .focus-visible:focus,
+        button:focus,
+        a:focus,
+        input:focus {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+        
+        /* Skip link for keyboard navigation */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 1000;
+        }
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        /* Screen reader only content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
+    <!-- UX-REQUIREMENTS: A11Y-WCAG-NAV01 - Skip link for keyboard navigation -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- UX-REQUIREMENTS: A11Y-WCAG-ARIA02 - Live region for status updates -->
+    <div id="status-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    
     <!-- Header -->
-    <header class="bg-blue-900 text-white shadow-lg">
+    <!-- UX-REQUIREMENTS: UX-NAV-H01 - Responsive header with environment badge -->
+    <header class="bg-blue-900 text-white shadow-lg" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center">
-                    <i class="fas fa-network-wired text-2xl mr-3"></i>
+                    <i class="fas fa-network-wired text-2xl mr-3" aria-hidden="true"></i>
                     <h1 class="text-2xl font-bold">DV8 SD-WAN Console</h1>
+                    <!-- UX-REQUIREMENTS: UX-NAV-H01 - Environment badge -->
+                    <span class="ml-4 px-2 py-1 bg-yellow-600 text-yellow-100 rounded text-xs font-medium" role="status">
+                        DEV
+                    </span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center text-green-300">
-                        <div class="w-2 h-2 bg-green-400 rounded-full pulse mr-2"></div>
+                    <div class="flex items-center text-green-300" role="status" aria-label="System status">
+                        <div class="w-2 h-2 bg-green-400 rounded-full pulse mr-2" aria-hidden="true"></div>
                         <span class="text-sm">System Healthy</span>
                     </div>
-                    <button id="self-heal-btn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-magic mr-2"></i>Auto Heal
+                    <!-- UX-REQUIREMENTS: A11Y-WCAG-NAME01 - Descriptive button label -->
+                    <button id="self-heal-btn" 
+                            class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors focus-visible"
+                            aria-describedby="heal-description">
+                        <i class="fas fa-magic mr-2" aria-hidden="true"></i>Auto Heal
                     </button>
+                    <span id="heal-description" class="sr-only">Automatically detect and repair network issues</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                        <i class="fas fa-server text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-600">Active Devices</p>
-                        <p class="text-2xl font-bold" id="device-count">{{ data.devices | length }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                        <i class="fas fa-clock text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-600">Avg Latency</p>
-                        <p class="text-2xl font-bold" id="avg-latency">{{ data.avg_latency }}ms</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                        <i class="fas fa-check-circle text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-600">Devices Up</p>
-                        <p class="text-2xl font-bold status-up" id="devices-up">{{ data.status_counts.up }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-red-100 text-red-600">
-                        <i class="fas fa-exclamation-circle text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-600">Devices Down</p>
-                        <p class="text-2xl font-bold status-down" id="devices-down">{{ data.status_counts.down }}</p>
-                    </div>
-                </div>
-            </div>
+    <!-- UX-REQUIREMENTS: UX-NAV-B01 - Breadcrumbs for navigation -->
+    <nav aria-label="Breadcrumb" class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ol class="flex items-center space-x-2 py-2 text-sm">
+                <li><a href="/" class="text-blue-600 hover:text-blue-800 focus-visible">Home</a></li>
+                <li><i class="fas fa-chevron-right text-gray-400 text-xs" aria-hidden="true"></i></li>
+                <li><span class="text-gray-900 font-medium" aria-current="page">Dashboard</span></li>
+            </ol>
         </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Main content area -->
+        <main id="main-content" role="main">
+            <!-- UX-REQUIREMENTS: UX-DASH-KPI01-06 - KPI cards with metrics, trends, and timeframe pickers -->
+            <section aria-labelledby="metrics-heading">
+                <h2 id="metrics-heading" class="text-2xl font-bold text-gray-900 mb-6">Network Metrics Overview</h2>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" role="region" aria-label="Key performance indicators">
+                    <div class="card bg-white rounded-xl shadow-md p-6" role="article" aria-labelledby="device-count-label">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600" aria-hidden="true">
+                                <i class="fas fa-server text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 id="device-count-label" class="text-sm text-gray-600 font-medium">Active Devices</h3>
+                                <p class="text-2xl font-bold" id="device-count" aria-live="polite">{{ data.devices | length }}</p>
+                                <span class="sr-only">devices currently active</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-white rounded-xl shadow-md p-6" role="article" aria-labelledby="latency-label">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600" aria-hidden="true">
+                                <i class="fas fa-clock text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 id="latency-label" class="text-sm text-gray-600 font-medium">Average Latency</h3>
+                                <p class="text-2xl font-bold" id="avg-latency" aria-live="polite">{{ data.avg_latency }}ms</p>
+                                <span class="sr-only">milliseconds average network latency</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white rounded-xl shadow-md p-6" role="article" aria-labelledby="devices-up-label">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600" aria-hidden="true">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 id="devices-up-label" class="text-sm text-gray-600 font-medium">Devices Up</h3>
+                                <p class="text-2xl font-bold status-up" id="devices-up" aria-live="polite">{{ data.status_counts.up }}</p>
+                                <span class="sr-only">devices currently operational</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white rounded-xl shadow-md p-6" role="article" aria-labelledby="devices-down-label">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-red-100 text-red-600" aria-hidden="true">
+                                <i class="fas fa-exclamation-circle text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 id="devices-down-label" class="text-sm text-gray-600 font-medium">Devices Down</h3>
+                                <p class="text-2xl font-bold status-down" id="devices-down" aria-live="polite">{{ data.status_counts.down }}</p>
+                                <span class="sr-only">devices currently offline</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Network Metrics Chart -->
-            <div class="card bg-white rounded-xl shadow-md p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Network Performance</h2>
-                    <button id="refresh-metrics" class="text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-sync-alt"></i>
+            <section aria-labelledby="chart-heading">
+                <div class="card bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="chart-heading" class="text-xl font-bold text-gray-800">Network Performance</h2>
+                        <!-- UX-REQUIREMENTS: UX-DASH-KPI04 - Manual refresh capability -->
+                        <button id="refresh-metrics" 
+                                class="text-blue-600 hover:text-blue-800 focus-visible p-2"
+                                aria-label="Refresh network performance metrics">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <!-- UX-REQUIREMENTS: PERF-VITALS-CLS - Prevent layout shift -->
+                        <canvas id="metricsChart" 
+                                width="400" 
+                                height="200" 
+                                aria-label="Network performance chart showing latency over time"
+                                role="img">
+                            <!-- Fallback content for screen readers -->
+                            <p>Chart showing network latency over the past hour. Current average latency is {{ data.avg_latency }}ms.</p>
+                        </canvas>
+                    </div>
+                </div>
+            </section>
                     </button>
                 </div>
                 <canvas id="latencyChart" width="400" height="200"></canvas>
@@ -111,12 +205,12 @@
                 <form id="device-form" class="space-y-4 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Device Name</label>
-                            <input type="text" id="device-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., router-1">
+                            <label for="device-name" class="block text-sm font-medium text-gray-700 mb-2">Device Name</label>
+                            <input type="text" id="device-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible" placeholder="e.g., router-1" required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Device Type</label>
-                            <select id="device-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="device-type" class="block text-sm font-medium text-gray-700 mb-2">Device Type</label>
+                            <select id="device-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible" required>
                                 <option value="">Select Type</option>
                                 <option value="router">Router</option>
                                 <option value="switch">Switch</option>
@@ -127,12 +221,12 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Ports</label>
-                            <input type="number" id="device-ports" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" min="1" max="48" value="4">
+                            <label for="device-ports" class="block text-sm font-medium text-gray-700 mb-2">Ports</label>
+                            <input type="number" id="device-ports" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible" min="1" max="48" value="4">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <select id="device-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="device-status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="device-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible">
                                 <option value="up">Up</option>
                                 <option value="down">Down</option>
                                 <option value="maintenance">Maintenance</option>
@@ -195,8 +289,10 @@
                 </div>
                 <div class="ml-auto pl-3">
                     <div class="-mx-1.5 -my-1.5">
-                        <button onclick="hideNotification()" class="inline-flex rounded-md p-1.5 text-gray-400 hover:text-gray-500">
-                            <i class="fas fa-times"></i>
+                        <button onclick="hideNotification()" 
+                                class="inline-flex rounded-md p-1.5 text-gray-400 hover:text-gray-500 focus-visible"
+                                aria-label="Close notification">
+                            <i class="fas fa-times" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
