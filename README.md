@@ -213,6 +213,37 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **Audit Trail**: Complete operation logging for compliance
 - **Decision Headers**: Policy enforcement on all endpoints
 
+## 📊 UX Requirements & Standards Compliance
+
+The DV8 SD-WAN Console follows international standards for user experience and accessibility:
+
+### Standards Implemented
+- **ISO/IEC/IEEE 29148**: Requirements format with formal SHALL statements
+- **WCAG 2.2 AA**: Web accessibility guidelines with full compliance
+- **ISO 9241-210**: Human-centred design lifecycle
+- **ISO/IEC 25010**: Software quality model (usability, performance, security)
+- **OWASP ASVS v4.0+**: Application security verification standard
+- **NIST SP 800-63-3**: Digital identity guidelines
+
+### Key UX Enhancements
+- **Accessibility-First Design**: Full keyboard navigation, screen reader support, enhanced contrast
+- **Semantic HTML Structure**: Proper landmarks, headings, and ARIA annotations  
+- **Live Regions**: Dynamic content announcements for assistive technologies
+- **Focus Management**: Visible focus indicators and logical tab order
+- **Error Handling**: Accessible validation with clear, actionable messages
+
+### Documentation
+- **[UX_REQUIREMENTS.md](UX_REQUIREMENTS.md)**: Formal requirements with testable SHALL statements
+- **[SRS_INTEGRATION.md](SRS_INTEGRATION.md)**: Traceability matrix linking UX to SRS requirements
+- **[COMPLIANCE_VERIFICATION.md](COMPLIANCE_VERIFICATION.md)**: CI gates and verification methods
+- **[UX_TRACEABILITY_MATRIX.md](UX_TRACEABILITY_MATRIX.md)**: End-to-end requirement traceability
+
+### Testing & Verification
+- **Automated Accessibility Testing**: Zero critical violations in CI
+- **Performance Monitoring**: Core Web Vitals compliance framework
+- **Security Gates**: OWASP scanning and ASVS validation
+- **Cross-browser Compatibility**: Modern browser support with graceful degradation
+
 ## 📝 Documentation
 
 - **API Docs**: Available at `/docs` when running
