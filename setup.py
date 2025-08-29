@@ -34,7 +34,13 @@ def check_system_dependencies():
     else:
         try:
             result = subprocess.run(["dotnet", "--version"], capture_output=True, text=True)
-            print(f"✓ .NET SDK {result.stdout.strip()} detected")
+            version = result.stdout.strip()
+            print(f"✓ .NET SDK {version} detected")
+            
+            # Validate minimum version
+            version_parts = version.split('.')
+            if len(version_parts) >= 1 and int(version_parts[0]) < 6:
+                print("⚠️  .NET SDK 6.0+ recommended for optimal performance")
         except Exception:
             print("❌ .NET SDK installation appears corrupted")
             sys.exit(1)
@@ -44,6 +50,22 @@ def check_system_dependencies():
         print("⚠️  Git not found. Some features may not work correctly")
     else:
         print("✓ Git detected")
+    
+    # Check disk space
+    disk_usage = shutil.disk_usage(".")
+    free_gb = disk_usage.free / (1024**3)
+    if free_gb < 1.0:
+        print(f"⚠️  Low disk space: {free_gb:.1f}GB available")
+    else:
+        print(f"✓ Disk space available: {free_gb:.1f}GB")
+    
+    # Check network connectivity
+    try:
+        import socket
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
+        print("✓ Network connectivity verified")
+    except OSError:
+        print("⚠️  Network connectivity issues detected")
 
 
 def install_python_dependencies():
