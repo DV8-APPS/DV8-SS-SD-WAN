@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using DV8.Console.Services;
+using DV8.Console.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -26,7 +27,7 @@ public class DiscoveryControllerTests : IClassFixture<WebApplicationFactory<Prog
         Assert.NotNull(job);
         var status = await _client.GetAsync($"/discovery/jobs/{job!.Id}");
         status.EnsureSuccessStatusCode();
-        var list = await _client.GetFromJsonAsync<IEnumerable<Candidate>>("/discovery/candidates?tenant=t1");
+        var list = await _client.GetFromJsonAsync<IEnumerable<CandidateInfo>>("/discovery/candidates?tenant=t1");
         Assert.NotNull(list);
     }
 }
