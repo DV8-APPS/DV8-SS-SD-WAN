@@ -20,7 +20,7 @@ public class SelfHealControllerTests : IClassFixture<WebApplicationFactory<Progr
         var device = new SandboxDevice { Name = "heal-router", DeviceType = "router", Ports = 4, Status = "down" };
         var resp = await _client.PostAsJsonAsync("/sandbox/device", device);
         resp.EnsureSuccessStatusCode();
-        var healResp = await _client.PostAsync("/selfheal", null);
+        var healResp = await _client.PostAsync("/self-heal", null);
         healResp.EnsureSuccessStatusCode();
         var healed = await healResp.Content.ReadFromJsonAsync<List<string>>();
         Assert.NotNull(healed);
