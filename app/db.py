@@ -26,10 +26,14 @@ def _default_database_url() -> str:
     password = os.getenv("MSSQL_PASSWORD")
     if all([server, database, user, password]):
         pwd = quote_plus(password)
-        return (
-            f"mssql+pyodbc://{user}:{pwd}@{server}/{database}?"\
-            "driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes"
+        trust_cert = os.getenv("MSSQL_TRUST_SERVER_CERTIFICATE", "no").lower() == "yes"
+        conn_str = (
+            f"mssql+pyodbc://{user}:{pwd}@{server}/{database}?"
+            "driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes"
         )
+        if trust_cert:
+            conn_str += "&TrustServerCertificate=yes"
+        return conn_str
     return "sqlite:///./dv8.db"
 
 
