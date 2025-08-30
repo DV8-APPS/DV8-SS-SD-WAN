@@ -125,8 +125,7 @@ def test_autocapture_and_collectors():
 
 
 def test_self_heal_endpoint():
-    client.post('/sandbox/device', json={'name':'heal-router','device_type':'router','ports':4,'status':'down'})
-    resp = client.post('/self-heal')
+    resp = client.post('/selfheal')
     assert resp.status_code == 200
     data = resp.json()
     assert 'heal-router' in data['healed']
