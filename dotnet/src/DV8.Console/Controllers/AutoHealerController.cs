@@ -12,8 +12,11 @@ namespace DV8.Console.Controllers
         public AutoHealerController(AutoHealerService svc) { _service = svc; }
 
         [HttpPost("playbooks")]
-        public ActionResult<Dictionary<string, object>> CreatePlaybook([FromBody] Dictionary<string, object> body)
-            => _service.CreatePlaybook(body["name"].ToString()!);
+        {
+            if (body == null || !body.TryGetValue("name", out var nameObj) || nameObj == null)
+                return BadRequest(new { error = "'name' field is required in the request body." });
+            return _service.CreatePlaybook(nameObj.ToString()!);
+        }
 
         [HttpGet("incidents")]
         public IEnumerable<Dictionary<string, object>> ListIncidents()
