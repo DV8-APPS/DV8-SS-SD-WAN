@@ -12,7 +12,16 @@ namespace DV8.Console.Controllers
         public PlannerController(PlannerService svc) { _svc = svc; }
 
         [HttpPost("recommend")]
-        public object Recommend([FromBody] Dictionary<string, object> body)
-            => _svc.Recommend(body["site"].ToString()!, body["intentId"].ToString()!, (int)body["horizonDays"]);
+        {
+            var missingKeys = new List<string>();
+            if (!body.ContainsKey("site")) missingKeys.Add("site");
+            if (!body.ContainsKey("intentId")) missingKeys.Add("intentId");
+            if (!body.ContainsKey("horizonDays")) missingKeys.Add("horizonDays");
+            if (missingKeys.Count > 0)
+            {
+                return BadRequest(new { error = $"Missing required key(s): {string.Join(", ", missingKeys)}" });
+            }
+            return _svc.Recommend(body["site"].ToString()!, body["intentId"].ToString()!, (int)body["horizonDays"]);
+        }
     }
 }
