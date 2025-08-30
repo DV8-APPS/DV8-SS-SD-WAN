@@ -1,0 +1,6 @@
+syntax = "proto3";
+package dv8.crypto.v1;
+
+message HoacReq { string channel = 1; string policy = 2; uint32 risk = 3; }
+message HoacRes { string profile = 1; bytes transcript = 2; }
+service Quantum { rpc Negotiate(HoacReq) returns (HoacRes); }

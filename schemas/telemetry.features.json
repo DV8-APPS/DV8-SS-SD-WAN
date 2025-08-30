@@ -1,0 +1,7 @@
+{ "type":"object","properties":{
+  "ts":{"type":"integer"},
+  "device":{"type":"string"},
+  "site":{"type":"string"},
+  "loss":{"type":"number"},"lat":{"type":"number"},"jit":{"type":"number"},
+  "entropy_delta":{"type":"number"},"geo_velocity":{"type":"number"}
+},"required":["ts","device"]}

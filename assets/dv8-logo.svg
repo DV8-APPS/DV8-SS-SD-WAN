@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  <style>
+    .dv{font: 60px sans-serif; fill:#0A0A0A}
+    .eight{font: 60px sans-serif; fill:#D5232E}
+  </style>
+  <text x="0" y="60" class="dv">dv</text>
+  <text x="90" y="60" class="eight">8</text>
+</svg>

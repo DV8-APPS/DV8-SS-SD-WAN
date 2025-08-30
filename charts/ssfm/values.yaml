@@ -1,0 +1,35 @@
+image:
+  repo: registry.dv8/ssfm
+  tag: v0.1.0
+ingress:
+  enabled: true
+  hosts: [ssfm.dv8]
+  tls: [{ secretName: ssfm-tls, hosts: [ssfm.dv8] }]
+features:
+  discovery: true
+  sandbox: true
+  firmwareLCM: true
+secrets:
+  vaultAddr: https://vault.dv8
+  mount: kv/ssfm
+gatekeeperPolicies:
+  enforceSignedImages: true
+  dropCapabilities: ["ALL"]
+
+quantumshield:
+  enabled: true
+  hoac:
+    defaultProfile: ECC
+    pqcThreshold: 70
+  set:
+    keyRotationHours: 24
+  lso:
+    exportDefault: false
+ccp:
+  replicas: 3
+  decisionsTopic: "security.ccp.decisions"
+aic:
+  capsules: ["SessionOracle","EntropyGuard","KeySurgeon","VectorMind"]
+vault:
+  mount: kv/ssfm
+  hsmEnabled: true
