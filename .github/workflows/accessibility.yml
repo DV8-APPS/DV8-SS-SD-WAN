@@ -1,0 +1,32 @@
+name: Accessibility Testing
+on: [push, pull_request]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  axe-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          npm install -g @axe-core/cli
+          pip install -r requirements.txt
+      - name: Start application
+        run: |
+          python run_dv8.py &
+          sleep 10
+      - name: Run Axe accessibility scan
+        run: |
+          axe http://localhost:8000/dashboard --exit
+          axe http://localhost:8000/ --exit
+      - name: Keyboard navigation test
+        run: |
+          # Custom keyboard traversal script
+          python tests/accessibility/keyboard_navigation.py
