@@ -4,3 +4,13 @@ __pycache__/
 **/obj/
 .vs/
 *.db
+
+# Workflow artifacts
+.pytest_cache/
+node_modules/
+dist/
+.lighthouserc.json
+.zap/
+lhci-reports/
+axe-reports/
+playwright-report/
