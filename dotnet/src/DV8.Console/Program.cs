@@ -33,13 +33,21 @@ builder.Services.AddSingleton<ZeroTouchService>();
 
 var app = builder.Build();
 
-// Ensure database is created
+// Ensure database is created or updated
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<DV8DbContext>();
     try
     {
-        context.Database.EnsureCreated();
+        // Use migrations for relational databases in production, EnsureCreated for development or in-memory
+        if (!app.Environment.IsDevelopment() && context.Database.IsRelational())
+        {
+            context.Database.Migrate();
+        }
+        else
+        {
+            context.Database.EnsureCreated();
+        }
     }
     catch (Exception ex) when (ex.Message.Contains("already exists"))
     {
