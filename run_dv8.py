@@ -4,6 +4,7 @@ DV8 SD-WAN Application Launcher
 """
 
 import uvicorn
+from app.main import app
 
 if __name__ == "__main__":
     print("🚀 Starting DV8 SD-WAN Console...")
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     print("   Press Ctrl+C to stop")
     
     uvicorn.run(
-        "app.main:app", 
+        app, 
         host="0.0.0.0", 
         port=8000, 
         reload=True,
