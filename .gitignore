@@ -4,3 +4,5 @@ __pycache__/
 **/obj/
 .vs/
 *.db
+*.db-shm
+*.db-wal

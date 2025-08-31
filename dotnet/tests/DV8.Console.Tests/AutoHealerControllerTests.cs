@@ -5,10 +5,10 @@ using Xunit;
 
 namespace DV8.Console.Tests
 {
-    public class AutoHealerControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class AutoHealerControllerTests : IClassFixture<TestWebApplicationFactory>
     {
         private readonly HttpClient _client;
-        public AutoHealerControllerTests(WebApplicationFactory<Program> factory)
+        public AutoHealerControllerTests(TestWebApplicationFactory factory)
         {
             _client = factory.CreateClient();
         }

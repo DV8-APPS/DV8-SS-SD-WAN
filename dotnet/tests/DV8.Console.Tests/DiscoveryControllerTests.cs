@@ -8,11 +8,11 @@ using Xunit;
 
 namespace DV8.Console.Tests;
 
-public class DiscoveryControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class DiscoveryControllerTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public DiscoveryControllerTests(WebApplicationFactory<Program> factory)
+    public DiscoveryControllerTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

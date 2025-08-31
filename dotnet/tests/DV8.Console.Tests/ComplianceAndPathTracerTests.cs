@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace DV8.Console.Tests;
 
-public class ComplianceAndPathTracerTests : IClassFixture<WebApplicationFactory<Program>>
+public class ComplianceAndPathTracerTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    public ComplianceAndPathTracerTests(WebApplicationFactory<Program> factory)
+    public ComplianceAndPathTracerTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
