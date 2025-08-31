@@ -37,7 +37,15 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<DV8DbContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        context.Database.EnsureCreated();
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("already exists"))
+    {
+        // Database already exists, this is fine - likely created by Python component
+        Console.WriteLine("Database already exists, skipping creation.");
+    }
     
     // Initialize services that don't require database context
     scope.ServiceProvider.GetRequiredService<FirmwareManager>();
@@ -64,7 +72,7 @@ app.Use(async (ctx, next) =>
 {
     await next();
     if (!ctx.Response.Headers.ContainsKey("X-DV8-Decision"))
-        ctx.Response.Headers.Add("X-DV8-Decision", "ALLOW");
+        ctx.Response.Headers["X-DV8-Decision"] = "ALLOW";
 });
 
 using (var scope = app.Services.CreateScope())

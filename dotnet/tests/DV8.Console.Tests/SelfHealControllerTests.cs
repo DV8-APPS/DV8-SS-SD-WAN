@@ -23,6 +23,6 @@ public class SelfHealControllerTests : IClassFixture<WebApplicationFactory<Progr
         var healResp = await _client.PostAsync("/selfheal", null);
         healResp.EnsureSuccessStatusCode();
         var healed = await healResp.Content.ReadFromJsonAsync<List<string>>();
-        Assert.Contains("heal-router", healed);
+        Assert.Contains("heal-router", healed ?? new List<string>());
     }
 }
