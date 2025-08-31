@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace DV8.Console.Tests;
 
-public class ZeroTouchControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class ZeroTouchControllerTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public ZeroTouchControllerTests(WebApplicationFactory<Program> factory)
+    public ZeroTouchControllerTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

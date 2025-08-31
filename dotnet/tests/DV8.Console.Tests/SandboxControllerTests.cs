@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace DV8.Console.Tests;
 
-public class SandboxControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class SandboxControllerTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public SandboxControllerTests(WebApplicationFactory<Program> factory)
+    public SandboxControllerTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

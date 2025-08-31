@@ -5,10 +5,10 @@ using Xunit;
 
 namespace DV8.Console.Tests
 {
-    public class GuardRailControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class GuardRailControllerTests : IClassFixture<TestWebApplicationFactory>
     {
         private readonly HttpClient _client;
-        public GuardRailControllerTests(WebApplicationFactory<Program> factory)
+        public GuardRailControllerTests(TestWebApplicationFactory factory)
         {
             _client = factory.CreateClient();
         }

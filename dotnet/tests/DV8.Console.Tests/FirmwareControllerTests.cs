@@ -6,11 +6,11 @@ using Xunit;
 
 namespace DV8.Console.Tests
 {
-    public class FirmwareControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class FirmwareControllerTests : IClassFixture<TestWebApplicationFactory>
     {
         private readonly HttpClient _client;
 
-        public FirmwareControllerTests(WebApplicationFactory<Program> factory)
+        public FirmwareControllerTests(TestWebApplicationFactory factory)
         {
             _client = factory.CreateClient();
         }

@@ -11,7 +11,7 @@ builder.Services.AddSwaggerGen();
 
 // Add Entity Framework
 builder.Services.AddDbContext<DV8DbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register database-enabled services
 builder.Services.AddScoped<DeviceService>();
@@ -33,17 +33,25 @@ builder.Services.AddSingleton<ZeroTouchService>();
 
 var app = builder.Build();
 
-// Ensure database is created
+// Ensure database is created or updated
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<DV8DbContext>();
     try
     {
-        context.Database.EnsureCreated();
+        // Use migrations for relational databases in production, EnsureCreated for development or in-memory
+        if (!app.Environment.IsDevelopment() && context.Database.IsRelational())
+        {
+            context.Database.Migrate();
+        }
+        else
+        {
+            context.Database.EnsureCreated();
+        }
     }
-    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("already exists"))
+    catch (Exception ex) when (ex.Message.Contains("already exists"))
     {
-        // Database already exists, this is fine - likely created by Python component
+        // Database already exists, this is fine - likely created by another component
         Console.WriteLine("Database already exists, skipping creation.");
     }
     

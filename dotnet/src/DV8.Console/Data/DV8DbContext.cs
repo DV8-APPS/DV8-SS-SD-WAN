@@ -27,7 +27,6 @@ namespace DV8.Console.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Fingerprint).IsUnique();
-                // Note: SQLite doesn't enforce check constraints, but Entity Framework will validate them
             });
 
             // Configure Interface

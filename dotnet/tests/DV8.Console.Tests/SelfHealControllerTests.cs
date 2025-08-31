@@ -6,10 +6,10 @@ using Xunit;
 
 namespace DV8.Console.Tests;
 
-public class SelfHealControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class SelfHealControllerTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    public SelfHealControllerTests(WebApplicationFactory<Program> factory)
+    public SelfHealControllerTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
