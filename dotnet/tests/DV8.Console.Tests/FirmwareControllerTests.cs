@@ -35,7 +35,7 @@ namespace DV8.Console.Tests
             Assert.True(latency > 0);
 
             var status = await _client.GetFromJsonAsync<Dictionary<string, int>>("/analytics/status");
-            Assert.True(status.ContainsKey("offline"));
+            Assert.True(status?.ContainsKey("offline") ?? false);
         }
     }
 }
