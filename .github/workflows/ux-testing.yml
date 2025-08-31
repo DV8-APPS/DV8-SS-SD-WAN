@@ -1,0 +1,22 @@
+name: UX Validation
+on: [push, pull_request]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  user-flow-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Playwright
+        run: |
+          npm install -g playwright
+          playwright install
+      - name: Run critical user flows
+        run: |
+          python tests/ux/critical_flows.py
+      - name: Validate task completion rates
+        run: |
+          python tests/ux/task_success_validation.py

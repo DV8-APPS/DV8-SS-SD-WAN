@@ -1,0 +1,27 @@
+name: Performance Testing
+on: [push, pull_request]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          npm install -g lighthouse-ci
+          pip install -r requirements.txt
+      - name: Start application
+        run: |
+          python run_dv8.py &
+          sleep 10
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun --config=.lighthouserc.json
